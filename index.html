@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mashgh - Learn Persian</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: #f7f7f7;
+    color: #3c3c3c;
+    min-height: 100vh;
+  }
+
+  /* Header */
+  header {
+    background: #58CC02;
+    color: white;
+    padding: 18px 24px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  header h1 { font-size: 28px; letter-spacing: 1px; }
+  header h1 span { font-size: 14px; opacity: 0.85; display: block; margin-top: 2px; font-weight: 400; }
+
+  /* Stats bar */
+  .stats {
+    display: flex;
+    justify-content: center;
+    gap: 28px;
+    padding: 12px 20px;
+    background: white;
+    border-bottom: 1px solid #e5e5e5;
+    font-size: 15px;
+    font-weight: 600;
+  }
+  .stats .stat { display: flex; align-items: center; gap: 6px; }
+  .stats .stat .icon { font-size: 20px; }
+  .streak-color { color: #FF9600; }
+  .score-color { color: #58CC02; }
+  .quiz-color { color: #CE82FF; }
+
+  /* Mode toggle */
+  .mode-toggle {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    padding: 16px 20px 8px;
+  }
+  .mode-btn {
+    padding: 10px 28px;
+    border: 2px solid #e5e5e5;
+    border-radius: 16px;
+    background: white;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: #777;
+  }
+  .mode-btn.active {
+    border-color: #58CC02;
+    color: #58CC02;
+    background: #f0fce8;
+  }
+  .mode-btn:hover { border-color: #58CC02; }
+
+  /* Category tabs */
+  .categories {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 20px;
+  }
+  .cat-btn {
+    padding: 7px 16px;
+    border: none;
+    border-radius: 20px;
+    background: #e8e8e8;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: #555;
+  }
+  .cat-btn.active {
+    background: #58CC02;
+    color: white;
+  }
+  .cat-btn:hover { opacity: 0.85; }
+
+  /* Flashcard grid */
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 18px;
+    padding: 20px 24px 40px;
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+
+  /* Flashcard */
+  .card-wrapper { perspective: 800px; height: 240px; cursor: pointer; }
+  .card {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.5s ease;
+    border-radius: 18px;
+  }
+  .card.flipped { transform: rotateY(180deg); }
+  .card-front, .card-back {
+    position: absolute;
+    inset: 0;
+    border-radius: 18px;
+    backface-visibility: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+  }
+  .card-front {
+    background: white;
+    border-bottom: 4px solid #e5e5e5;
+  }
+  .card-front .emoji { font-size: 48px; margin-bottom: 12px; }
+  .card-front .persian {
+    font-size: 34px;
+    direction: rtl;
+    font-weight: 700;
+    color: #333;
+    line-height: 1.3;
+  }
+  .card-front .transliteration {
+    font-size: 14px;
+    color: #999;
+    margin-top: 6px;
+    font-style: italic;
+  }
+  .card-front .tap-hint {
+    font-size: 11px;
+    color: #ccc;
+    margin-top: auto;
+  }
+  .card-back {
+    background: #58CC02;
+    color: white;
+    transform: rotateY(180deg);
+    border-bottom: 4px solid #46a302;
+  }
+  .card-back .emoji { font-size: 36px; margin-bottom: 8px; }
+  .card-back .english { font-size: 24px; font-weight: 700; }
+  .card-back .persian-small {
+    font-size: 20px;
+    direction: rtl;
+    margin-top: 8px;
+    opacity: 0.9;
+  }
+  .card-back .transliteration {
+    font-size: 13px;
+    opacity: 0.75;
+    margin-top: 4px;
+    font-style: italic;
+  }
+
+  /* Sentence cards */
+  .sentence-card {
+    background: white;
+    border-radius: 18px;
+    padding: 24px;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+    border-left: 5px solid #58CC02;
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+  .sentence-card:hover { transform: translateY(-2px); }
+  .sentence-card .persian-sentence {
+    font-size: 26px;
+    direction: rtl;
+    text-align: right;
+    font-weight: 600;
+    color: #333;
+    line-height: 1.5;
+  }
+  .sentence-card .translit {
+    font-size: 14px;
+    color: #999;
+    margin-top: 6px;
+    font-style: italic;
+  }
+  .sentence-card .english-sentence {
+    font-size: 16px;
+    color: #58CC02;
+    font-weight: 600;
+    margin-top: 10px;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .sentence-card.revealed .english-sentence { opacity: 1; }
+  .sentence-card .hint { font-size: 11px; color: #ccc; margin-top: 12px; }
+  .sentence-card.revealed .hint { display: none; }
+
+  .sentence-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+    padding: 20px 24px 40px;
+    max-width: 700px;
+    margin: 0 auto;
+  }
+
+  /* Quiz mode */
+  .quiz-container {
+    max-width: 520px;
+    margin: 0 auto;
+    padding: 30px 24px 40px;
+    text-align: center;
+  }
+  .quiz-prompt .emoji { font-size: 56px; }
+  .quiz-prompt .persian {
+    font-size: 42px;
+    direction: rtl;
+    font-weight: 700;
+    margin: 10px 0 4px;
+  }
+  .quiz-prompt .transliteration {
+    font-size: 15px;
+    color: #999;
+    font-style: italic;
+    margin-bottom: 8px;
+  }
+  .quiz-prompt .instruction {
+    font-size: 14px;
+    color: #aaa;
+    margin-bottom: 24px;
+  }
+  .quiz-options {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .quiz-opt {
+    padding: 16px 20px;
+    border: 2px solid #e5e5e5;
+    border-radius: 14px;
+    background: white;
+    font-size: 17px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+  }
+  .quiz-opt:hover { border-color: #58CC02; background: #f8fff2; }
+  .quiz-opt.correct {
+    border-color: #58CC02;
+    background: #d4f7b0;
+    color: #2b7a00;
+  }
+  .quiz-opt.wrong {
+    border-color: #FF4B4B;
+    background: #ffe0e0;
+    color: #c00;
+  }
+  .quiz-next {
+    margin-top: 24px;
+    padding: 14px 40px;
+    border: none;
+    border-radius: 14px;
+    background: #58CC02;
+    color: white;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    display: none;
+    margin-left: auto;
+    margin-right: auto;
+    transition: background 0.15s;
+  }
+  .quiz-next:hover { background: #46a302; }
+  .quiz-next.show { display: inline-block; }
+
+  .quiz-result {
+    font-size: 18px;
+    font-weight: 700;
+    margin-top: 16px;
+  }
+  .quiz-result.correct-msg { color: #58CC02; }
+  .quiz-result.wrong-msg { color: #FF4B4B; }
+
+  .quiz-progress {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-bottom: 24px;
+  }
+  .quiz-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #e5e5e5;
+  }
+  .quiz-dot.done { background: #58CC02; }
+  .quiz-dot.miss { background: #FF4B4B; }
+  .quiz-dot.current { background: #FFD900; }
+
+  .quiz-score-final {
+    text-align: center;
+    padding: 60px 24px;
+  }
+  .quiz-score-final .big-emoji { font-size: 72px; }
+  .quiz-score-final h2 { font-size: 28px; margin: 16px 0 8px; }
+  .quiz-score-final p { font-size: 18px; color: #777; }
+  .quiz-score-final .restart-btn {
+    margin-top: 24px;
+    padding: 14px 40px;
+    border: none;
+    border-radius: 14px;
+    background: #58CC02;
+    color: white;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  /* Responsive */
+  @media (max-width: 600px) {
+    .card-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; padding: 16px; }
+    .card-wrapper { height: 210px; }
+    .card-front .persian { font-size: 28px; }
+    .card-front .emoji { font-size: 38px; }
+    header h1 { font-size: 22px; }
+    .stats { gap: 16px; font-size: 13px; }
+    .quiz-prompt .persian { font-size: 34px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Mashgh <span>Learn Persian / فارسی یاد بگیر</span></h1>
+</header>
+
+<div class="stats">
+  <div class="stat"><span class="icon streak-color">🔥</span> <span id="streak" class="streak-color">0</span></div>
+  <div class="stat"><span class="icon score-color">⭐</span> <span id="score" class="score-color">0</span></div>
+  <div class="stat"><span class="icon quiz-color">🧠</span> <span id="quizScore" class="quiz-color">0/0</span></div>
+</div>
+
+<div class="mode-toggle">
+  <button class="mode-btn active" onclick="setMode('cards')">📇 Flashcards</button>
+  <button class="mode-btn" onclick="setMode('sentences')">💬 Sentences</button>
+  <button class="mode-btn" onclick="setMode('quiz')">🧠 Quiz</button>
+</div>
+
+<div id="categories" class="categories"></div>
+
+<div id="content"></div>
+
+<script>
+const words = [
+  // Greetings
+  { persian: "سلام", translit: "salâm", english: "Hello", emoji: "👋", cat: "Greetings" },
+  { persian: "خداحافظ", translit: "khodâhâfez", english: "Goodbye", emoji: "👋", cat: "Greetings" },
+  { persian: "ممنون", translit: "mamnun", english: "Thank you", emoji: "🙏", cat: "Greetings" },
+  { persian: "لطفاً", translit: "lotfan", english: "Please", emoji: "🤲", cat: "Greetings" },
+  { persian: "بله", translit: "balé", english: "Yes", emoji: "✅", cat: "Greetings" },
+  { persian: "نه", translit: "na", english: "No", emoji: "❌", cat: "Greetings" },
+  // Numbers
+  { persian: "یک", translit: "yek", english: "One", emoji: "1️⃣", cat: "Numbers" },
+  { persian: "دو", translit: "do", english: "Two", emoji: "2️⃣", cat: "Numbers" },
+  { persian: "سه", translit: "se", english: "Three", emoji: "3️⃣", cat: "Numbers" },
+  { persian: "چهار", translit: "chahâr", english: "Four", emoji: "4️⃣", cat: "Numbers" },
+  { persian: "پنج", translit: "panj", english: "Five", emoji: "5️⃣", cat: "Numbers" },
+  // Colors
+  { persian: "قرمز", translit: "ghermez", english: "Red", emoji: "🔴", cat: "Colors" },
+  { persian: "آبی", translit: "âbi", english: "Blue", emoji: "🔵", cat: "Colors" },
+  { persian: "سبز", translit: "sabz", english: "Green", emoji: "🟢", cat: "Colors" },
+  { persian: "زرد", translit: "zard", english: "Yellow", emoji: "🟡", cat: "Colors" },
+  // Food
+  { persian: "نان", translit: "nân", english: "Bread", emoji: "🍞", cat: "Food" },
+  { persian: "آب", translit: "âb", english: "Water", emoji: "💧", cat: "Food" },
+  { persian: "چای", translit: "châi", english: "Tea", emoji: "🍵", cat: "Food" },
+  { persian: "برنج", translit: "berenj", english: "Rice", emoji: "🍚", cat: "Food" },
+  { persian: "سیب", translit: "sib", english: "Apple", emoji: "🍎", cat: "Food" },
+  // Family
+  { persian: "مادر", translit: "mâdar", english: "Mother", emoji: "👩", cat: "Family" },
+  { persian: "پدر", translit: "pedar", english: "Father", emoji: "👨", cat: "Family" },
+  { persian: "خواهر", translit: "khâhar", english: "Sister", emoji: "👧", cat: "Family" },
+  { persian: "برادر", translit: "barâdar", english: "Brother", emoji: "👦", cat: "Family" },
+  // Animals
+  { persian: "گربه", translit: "gorbé", english: "Cat", emoji: "🐱", cat: "Animals" },
+  { persian: "سگ", translit: "sag", english: "Dog", emoji: "🐶", cat: "Animals" },
+  { persian: "پرنده", translit: "parandé", english: "Bird", emoji: "🐦", cat: "Animals" },
+  // Common
+  { persian: "کتاب", translit: "ketâb", english: "Book", emoji: "📖", cat: "Common" },
+  { persian: "خانه", translit: "khâné", english: "House", emoji: "🏠", cat: "Common" },
+  { persian: "خورشید", translit: "khorshid", english: "Sun", emoji: "☀️", cat: "Common" },
+  { persian: "ماه", translit: "mâh", english: "Moon", emoji: "🌙", cat: "Common" },
+];
+
+const sentences = [
+  { persian: "سلام، حال شما چطور است؟", translit: "salâm, hâl-e shomâ chetor ast?", english: "Hello, how are you?" },
+  { persian: "من خوبم، ممنون", translit: "man khubam, mamnun", english: "I'm fine, thank you" },
+  { persian: "اسم من چیست؟", translit: "esm-e man chist?", english: "What is my name?" },
+  { persian: "من فارسی یاد می‌گیرم", translit: "man fârsi yâd migiram", english: "I am learning Persian" },
+  { persian: "لطفاً کمک کنید", translit: "lotfan komak konid", english: "Please help" },
+  { persian: "آب می‌خواهم", translit: "âb mikhâham", english: "I want water" },
+  { persian: "این چند است؟", translit: "in chand ast?", english: "How much is this?" },
+  { persian: "من ایرانی نیستم", translit: "man irâni nistam", english: "I am not Iranian" },
+  { persian: "هوا خیلی خوب است", translit: "havâ kheyli khub ast", english: "The weather is very nice" },
+  { persian: "کجا می‌روید؟", translit: "kojâ miravid?", english: "Where are you going?" },
+  { persian: "من یک کتاب دارم", translit: "man yek ketâb dâram", english: "I have a book" },
+  { persian: "خداحافظ، روز خوبی داشته باشید", translit: "khodâhâfez, ruz-e khubi dâshté bâshid", english: "Goodbye, have a nice day" },
+];
+
+// State
+let mode = 'cards';
+let activeCat = 'All';
+let streak = 0;
+let totalScore = 0;
+let quizCorrect = 0;
+let quizTotal = 0;
+let quizQuestions = [];
+let quizIndex = 0;
+let quizAnswers = [];
+
+const categories = ['All', ...new Set(words.map(w => w.cat))];
+
+// Render categories
+function renderCategories() {
+  const el = document.getElementById('categories');
+  el.innerHTML = categories.map(c =>
+    `<button class="cat-btn ${c === activeCat ? 'active' : ''}" onclick="setCat('${c}')">${c}</button>`
+  ).join('');
+  el.style.display = mode === 'quiz' ? 'none' : 'flex';
+}
+
+function setCat(cat) {
+  activeCat = cat;
+  renderCategories();
+  render();
+}
+
+function setMode(m) {
+  mode = m;
+  document.querySelectorAll('.mode-btn').forEach((btn, i) => {
+    btn.classList.toggle('active', ['cards','sentences','quiz'][i] === m);
+  });
+  if (m === 'quiz') startQuiz();
+  renderCategories();
+  render();
+}
+
+function getFiltered() {
+  return activeCat === 'All' ? words : words.filter(w => w.cat === activeCat);
+}
+
+function render() {
+  const el = document.getElementById('content');
+  if (mode === 'cards') renderCards(el);
+  else if (mode === 'sentences') renderSentences(el);
+  else renderQuiz(el);
+}
+
+// Flashcards
+function renderCards(el) {
+  const filtered = getFiltered();
+  el.innerHTML = `<div class="card-grid">${filtered.map((w, i) => `
+    <div class="card-wrapper" onclick="flipCard(this, ${i})">
+      <div class="card" id="card-${i}">
+        <div class="card-front">
+          <div class="emoji">${w.emoji}</div>
+          <div class="persian">${w.persian}</div>
+          <div class="transliteration">${w.translit}</div>
+          <div class="tap-hint">tap to reveal</div>
+        </div>
+        <div class="card-back">
+          <div class="emoji">${w.emoji}</div>
+          <div class="english">${w.english}</div>
+          <div class="persian-small">${w.persian}</div>
+          <div class="transliteration">${w.translit}</div>
+        </div>
+      </div>
+    </div>
+  `).join('')}</div>`;
+}
+
+function flipCard(wrapper, i) {
+  const card = wrapper.querySelector('.card');
+  const wasFlipped = card.classList.contains('flipped');
+  card.classList.toggle('flipped');
+  if (!wasFlipped) {
+    totalScore++;
+    document.getElementById('score').textContent = totalScore;
+  }
+}
+
+// Sentences
+function renderSentences(el) {
+  el.innerHTML = `<div class="sentence-grid">${sentences.map((s, i) => `
+    <div class="sentence-card" onclick="revealSentence(this)">
+      <div class="persian-sentence">${s.persian}</div>
+      <div class="translit">${s.translit}</div>
+      <div class="english-sentence">${s.english}</div>
+      <div class="hint">tap to reveal translation</div>
+    </div>
+  `).join('')}</div>`;
+}
+
+function revealSentence(card) {
+  card.classList.toggle('revealed');
+}
+
+// Quiz
+function startQuiz() {
+  const shuffled = [...words].sort(() => Math.random() - 0.5);
+  quizQuestions = shuffled.slice(0, 10);
+  quizIndex = 0;
+  quizAnswers = [];
+  quizCorrect = 0;
+}
+
+function renderQuiz(el) {
+  if (quizIndex >= quizQuestions.length) {
+    renderQuizEnd(el);
+    return;
+  }
+  const q = quizQuestions[quizIndex];
+  const wrongOptions = words
+    .filter(w => w.english !== q.english)
+    .sort(() => Math.random() - 0.5)
+    .slice(0, 3)
+    .map(w => w.english);
+  const options = [q.english, ...wrongOptions].sort(() => Math.random() - 0.5);
+
+  const dots = quizQuestions.map((_, i) => {
+    if (i < quizIndex) return `<div class="quiz-dot ${quizAnswers[i] ? 'done' : 'miss'}"></div>`;
+    if (i === quizIndex) return `<div class="quiz-dot current"></div>`;
+    return `<div class="quiz-dot"></div>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div class="quiz-container">
+      <div class="quiz-progress">${dots}</div>
+      <div class="quiz-prompt">
+        <div class="emoji">${q.emoji}</div>
+        <div class="persian">${q.persian}</div>
+        <div class="transliteration">${q.translit}</div>
+        <div class="instruction">What does this mean?</div>
+      </div>
+      <div class="quiz-options">
+        ${options.map(o => `<button class="quiz-opt" onclick="checkAnswer(this, '${o.replace(/'/g, "\\'")}', '${q.english.replace(/'/g, "\\'")}')">${o}</button>`).join('')}
+      </div>
+      <div id="quizResult" class="quiz-result"></div>
+      <button class="quiz-next" id="nextBtn" onclick="nextQuestion()">Continue</button>
+    </div>`;
+}
+
+function checkAnswer(btn, selected, correct) {
+  const opts = document.querySelectorAll('.quiz-opt');
+  if (btn.classList.contains('correct') || btn.classList.contains('wrong')) return;
+
+  opts.forEach(o => { o.style.pointerEvents = 'none'; });
+  const isCorrect = selected === correct;
+
+  if (isCorrect) {
+    btn.classList.add('correct');
+    document.getElementById('quizResult').textContent = "Correct! 🎉";
+    document.getElementById('quizResult').className = "quiz-result correct-msg";
+    quizCorrect++;
+    streak++;
+    totalScore += 5;
+  } else {
+    btn.classList.add('wrong');
+    opts.forEach(o => { if (o.textContent === correct) o.classList.add('correct'); });
+    document.getElementById('quizResult').textContent = `The answer was: ${correct}`;
+    document.getElementById('quizResult').className = "quiz-result wrong-msg";
+    streak = 0;
+  }
+
+  quizAnswers.push(isCorrect);
+  quizTotal++;
+  document.getElementById('streak').textContent = streak;
+  document.getElementById('score').textContent = totalScore;
+  document.getElementById('quizScore').textContent = `${quizCorrect}/${quizTotal}`;
+  document.getElementById('nextBtn').classList.add('show');
+}
+
+function nextQuestion() {
+  quizIndex++;
+  render();
+}
+
+function renderQuizEnd(el) {
+  const pct = Math.round((quizCorrect / quizQuestions.length) * 100);
+  const emoji = pct >= 80 ? "🏆" : pct >= 50 ? "👏" : "💪";
+  el.innerHTML = `
+    <div class="quiz-score-final">
+      <div class="big-emoji">${emoji}</div>
+      <h2>${pct}% Correct</h2>
+      <p>You got ${quizCorrect} out of ${quizQuestions.length} right!</p>
+      <button class="restart-btn" onclick="startQuiz(); render();">Try Again</button>
+    </div>`;
+}
+
+// Init
+renderCategories();
+render();
+</script>
+</body>
+</html>
